@@ -1,16 +1,18 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from .login_page import LoginPage
 from selenium.webdriver.support.select import Select
+from .common import Page
+from .login_page import LoginPage
 
-from selenium.webdriver.support import expected_conditions as EC
 
-
-class NewOrderPage:
+class NewOrderPage(Page):
+	
 	def __init__(self, driver, url):
+		super().__init__(driver, url)
 		self.driver = driver
 		self.url = url
 		self.login_page = LoginPage.for_seller(driver, url)
+		
 
 	def open(self):
 		self.login_page.open()
@@ -22,6 +24,9 @@ class NewOrderPage:
 
 	def quit(self):
 		self.driver.quit()
+
+	def wait(self):
+		return WebDriverWait(self.driver, 15)
 	
 	def select_adventure_gym_category(self):
 		adventure_gym_xpath = (By.XPATH, '//*[@id="one"]/div[2]/div/div[1]/div/div/a')
@@ -36,12 +41,9 @@ class NewOrderPage:
 		select = Select(element)
 		select.select_by_visible_text(color)
 	
-	def click_on(self, elementID):
-		# we have to scroll to the element, otherwise it will not be clickable
-		self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-		element = WebDriverWait(self.driver, 10).until(
-    EC.element_to_be_clickable((By.ID, elementID)))
-		element.click()
+	
+
+
 
 	def go_to_payment(self, mulch=False):
 		self.select_all_colors()
@@ -52,6 +54,7 @@ class NewOrderPage:
 			self.click_on('mulch2')
 		else:
 			self.select_mulch()
+			
 		self.click_on('ctrlFive') # next button
 
 	def select_all_colors(self):

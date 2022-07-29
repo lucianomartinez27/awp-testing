@@ -1,8 +1,9 @@
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
+from .common import Page
 
-class LoginPage:
+class LoginPage(Page):
 	def __init__(self, driver, url, username, password) -> None:
+		super().__init__(driver, url)
 		self.driver = driver
 		self.url = url
 		self.username = username
@@ -21,17 +22,17 @@ class LoginPage:
 	def login(self):
 		self.driver.find_element(By.ID, 'username').send_keys(self.username)
 		self.driver.find_element(By.ID, 'password').send_keys(self.password)
-		self.driver.find_element(By.ID, 'sesion').click()
+		self.click_on('sesion')
 
 	def logout(self):
 		self.driver.get(self.url + '/logout')
 
 	def is_logged_in(self):
-		return WebDriverWait(self.driver, 10).until(
+		return self.wait().until(
 			lambda d: d.find_element(By.CLASS_NAME, 'perfil').is_displayed()
 		)
 	
 	def is_logged_out(self):
-		return WebDriverWait(self.driver, 10).until(
+		return self.wait().until(
 			lambda d: d.find_element(By.ID, 'sesion').is_displayed()
 		)
