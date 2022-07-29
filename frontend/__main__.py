@@ -3,6 +3,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service as ChromeService
 from pages.login_page import LoginPage
 from pages.new_order_page import NewOrderPage
+from pages.payment_section import PaymentSection
+
 service = ChromeService(executable_path=ChromeDriverManager().install())
 options = webdriver.ChromeOptions()
 options.add_argument("--start-maximized")
@@ -24,7 +26,17 @@ def new_order_test():
 	new_order_page.select_a3_model()
 	new_order_page.go_to_payment(mulch=False)
 
+def payment_test():
+	payment_options = {'payment_method': 'RTO', 'mulch': False, 'tax_exempt': False, 'down_payment': 100}
+	payment_section = PaymentSection(driver, 'http://localhost:5001', payment_options)
+	payment_section.open()
+	payment_section.fill_payment()
 
 
 if __name__ == '__main__':
-		new_order_test()
+	try:	
+		payment_test()
+	except Exception as e:
+		print(e)
+		driver.quit()
+		raise e
