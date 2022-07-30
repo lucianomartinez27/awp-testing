@@ -1,9 +1,10 @@
+import time
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service as ChromeService
 from pages.login_page import LoginPage
 from pages.new_order_page import NewOrderPage
-from pages.payment_section import PaymentSection
+from pages.payment_section import CashPaymentSection, RTOPaymentSection
 import unittest
 
 
@@ -24,11 +25,6 @@ def new_order_test(driver):
 	new_order_page.select_a3_model()
 	new_order_page.go_to_payment(mulch=False)
 
-def payment_test(driver, downpayment=0):
-	payment_options = {'payment_method': 'RTO', 'mulch': False, 'tax_exempt': False, 'down_payment': downpayment}
-	payment_section = PaymentSection(driver, 'http://localhost:5001', payment_options)
-	payment_section.open()
-	payment_section.fill_payment()
 
 class TestPayment(unittest.TestCase):
 	def setUp(self):
@@ -42,24 +38,44 @@ class TestPayment(unittest.TestCase):
 		self.driver.quit()
 		
 	def test_payment_RTO_with_downpayment(self):
-		payment_options = {'payment_method': 'RTO', 'mulch': False, 'tax_exempt': False, 'down_payment': 100}
-		payment_section = PaymentSection(self.driver, 'http://localhost:5001', payment_options)
+		payment_options = {'mulch': False, 'tax_exempt': True, 'down_payment': 100}
+		payment_section = RTOPaymentSection(self.driver, 'http://localhost:5001', payment_options)
 		payment_section.open()
 		payment_section.fill_payment()
+		global_variables = payment_section.get_awp_global_variables()
+		self.assertAlmostEqual(global_variables['awp_tax_men'], 0, delta=0.1)
+		self.assertAlmostEqual(global_variables['awp_ren_to_own'], 60, delta=1)
+		self.assertAlmostEqual(global_variables['awp_total_ren'], 60, delta=1)
+		self.assertTrue(payment_section.is_tax_exempt())
 
-		self.assertEqual(payment_section.rent_to_own_total(), '$60.25')
-		self.assertEqual(payment_section.rent_to_own_tax(), '$3.77')
-		self.assertEqual(payment_section.rent_to_own_total_with_tax(), '$64.02')
 	
 	def test_payment_RTO_without_downpayment(self):
-		payment_options = {'payment_method': 'RTO', 'mulch': False, 'tax_exempt': False, 'down_payment': 0}
-		payment_section = PaymentSection(self.driver, 'http://localhost:5001', payment_options)
+		payment_options = {'mulch': False, 'tax_exempt': False, 'down_payment': 0}
+		payment_section = RTOPaymentSection(self.driver, 'http://localhost:5001', payment_options)
 		payment_section.open()
 		payment_section.fill_payment()
+		global_variables = payment_section.get_awp_global_variables()
+		self.assertAlmostEqual(global_variables['awp_total_cash'], global_variables['awp_totalMulchPrice'])
+		self.assertAlmostEqual(global_variables['awp_ren_to_own'], 65, delta=0.1)
+		self.assertAlmostEqual(global_variables['awp_tax_men'], 4, delta=0.1)
+		self.assertAlmostEqual(global_variables['awp_total_ren'], 70, delta=1)
+		self.assertAlmostEqual(global_variables['awp_totalMulchPrice'], 0, delta=0.1)
+		
+	def test_payment_CASH_with_tax(self):
+		payment_options = {'mulch': False, 'tax_exempt': False}
+		payment_section = CashPaymentSection(self.driver, 'http://localhost:5001', payment_options)
+		payment_section.open()
+		payment_section.fill_payment()
+		self.assertEqual(payment_section.cash_tax(), '$80.44')
 
-		self.assertEqual(payment_section.rent_to_own_total(), '$65.00')
-		self.assertEqual(payment_section.rent_to_own_tax(), '$4.06')
-		self.assertEqual(payment_section.rent_to_own_total_with_tax(), '$69.06')
+	
+	def test_payment_CASH_tax_exempt(self):
+		payment_options = {'mulch': False, 'tax_exempt': True}
+		payment_section = CashPaymentSection(self.driver, 'http://localhost:5001', payment_options)
+		payment_section.open()
+		payment_section.fill_payment()
+		self.assertTrue(payment_section.is_tax_exempt())
+
   
 if __name__ == '__main__':
 	unittest.main()

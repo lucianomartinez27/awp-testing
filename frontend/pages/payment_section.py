@@ -27,9 +27,8 @@ class PaymentSection(Page):
 		if options is None:
 			return self.options
 		else:
-			self.payment_method = 'payment2' if 'RTO' ==  options['payment_method'] else 'payment1'
 			self.mulch = True if 'mulch' == options['mulch'] else False
-			self.tax_exempt = 'tax1' if 'tax_exempt' == options['tax_exempt'] else 'tax2'
+			self.tax_exempt = 'tax1' if options['tax_exempt'] else 'tax2'
 			self.down_payment = options['down_payment'] if 'down_payment' in options else 0
 	
 	def fill_payment(self):
@@ -39,12 +38,10 @@ class PaymentSection(Page):
 		self.select_payment()
 
 	def set_down_payment(self):
-		down_payment_input = WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID, 'costreduc')))
-		down_payment_input.clear()
-		down_payment_input.send_keys(self.down_payment)
+		raise NotImplementedError("Sublcass reponsability")
 
 	def select_payment(self):
-		element = WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID, 'selmethodp')))
+		element = self.wait().until(EC.element_to_be_clickable((By.ID, 'selmethodp')))
 		select = Select(element)
 		select.select_by_value('1')
 
@@ -57,5 +54,41 @@ class PaymentSection(Page):
 	def rent_to_own_total_with_tax(self):
 		return self.driver.find_element(By.ID, 'totRen').text
 	
-	def return_awp_playset_price(self):
-		return self.driver.execute_script("return awp_playset_price;")
+	def cash_tax(self):
+		return self.driver.find_element(By.ID, 'tax').text
+	
+	def is_tax_exempt(self):
+		return \
+		(self.cash_tax() == '$0.00' or self.cash_tax() == '$0') or \
+		(self.rent_to_own_tax() == '$0.00' or self.rent_to_own_tax() == '$0')
+		
+	def get_awp_global_variables(self):
+		return self.driver.execute_script("""
+			return {
+				awp_playset_price: parseFloat(awp_playset_price),
+				awp_total_cash: parseFloat(awp_total_cash),
+				awp_ren_to_own: parseFloat(awp_ren_to_own),
+				awp_total_ren: parseFloat(awp_total_ren),
+				awp_tax_men: parseFloat(awp_tax_men),
+				awp_totalMulchPrice: parseFloat(awp_totalMulchPrice)
+				};
+		""")
+
+class CashPaymentSection(PaymentSection):
+
+	def __init__(self, driver, url, options):
+		super().__init__(driver, url, options)
+		self.payment_method = 'payment1'
+
+	def set_down_payment(self):
+		pass
+
+class RTOPaymentSection(PaymentSection):
+	def __init__(self, driver, url, options):
+		super().__init__(driver, url, options)
+		self.payment_method = 'payment2'
+
+	def set_down_payment(self):
+		down_payment_input = self.wait().until(EC.element_to_be_clickable((By.ID, 'costreduc')))
+		down_payment_input.clear()
+		down_payment_input.send_keys(self.down_payment)
