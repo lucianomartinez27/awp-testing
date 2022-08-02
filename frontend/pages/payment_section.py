@@ -1,5 +1,5 @@
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as EC
 from .common import Page
@@ -27,12 +27,12 @@ class PaymentSection(Page):
 		if options is None:
 			return self.options
 		else:
-			self.mulch = True if 'mulch' == options['mulch'] else False
+			self.mulch = options['mulch']
 			self.tax_exempt = 'tax1' if options['tax_exempt'] else 'tax2'
 			self.down_payment = options['down_payment'] if 'down_payment' in options else 0
 	
 	def fill_payment(self):
-		self.new_order_page.click_on(self.payment_method)
+		self.click_on(self.payment_method)
 		self.click_on(self.tax_exempt)
 		self.set_down_payment()
 		self.select_payment()
@@ -90,5 +90,5 @@ class RTOPaymentSection(PaymentSection):
 
 	def set_down_payment(self):
 		down_payment_input = self.wait().until(EC.element_to_be_clickable((By.ID, 'costreduc')))
-		down_payment_input.clear()
-		down_payment_input.send_keys(self.down_payment)
+		self.driver.execute_script("arguments[0].value = '%s';" % self.down_payment, down_payment_input)
+		self.driver.execute_script("arguments[0].dispatchEvent(new Event('change'));", down_payment_input)

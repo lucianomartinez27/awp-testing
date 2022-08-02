@@ -1,3 +1,4 @@
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.select import Select
@@ -49,11 +50,11 @@ class NewOrderPage(Page):
 		self.select_all_colors()
 		self.click_on('ctrlTree') # next button
 		self.click_on('ctrlFour') # next button
-
-		if not mulch:
-			self.click_on('mulch2')
-		else:
+		if mulch:
 			self.select_mulch()
+		else:
+			self.click_on('mulch2')
+			
 			
 		self.click_on('ctrlFive') # next button
 
@@ -64,4 +65,8 @@ class NewOrderPage(Page):
 			self.select_colors('slideColor', 'BLUE')
 	
 	def select_mulch(self):
-		raise NotImplementedError("Purchases with mulch are not implemented yet")
+		self.click_on('mulch1')
+		mulch_element = self.driver.find_element(By.ID, 'selmulch')
+		mulch_select = Select(mulch_element)
+		mulch_select.select_by_visible_text('Black - Uncoated')
+		self.click_on('registrar')
