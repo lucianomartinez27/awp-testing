@@ -42,8 +42,6 @@ class NewOrderPage(Page):
 		select = Select(element)
 		select.select_by_visible_text(color)
 	
-	
-
 
 
 	def go_to_payment(self, mulch=False):
